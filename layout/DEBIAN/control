@@ -1,0 +1,9 @@
+Package: com.protosphere.pinnacle
+Name: Pinnacle
+Depends: mobilesubstrate
+Version: 0.0.1
+Architecture: iphoneos-arm
+Description: An awesome MobileSubstrate tweak!
+Maintainer: Josh Kugelmann
+Author: Josh Kugelmann
+Section: Tweaks
