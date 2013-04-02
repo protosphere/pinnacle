@@ -8,11 +8,11 @@
 @interface UINavigationBar (Private)
 - (id)currentBackButton;
 - (id)navigationItems;
-- (void)setNavigationItems:(id)arg1;
 @end
 
 #define PNCRectContainsPoint(rect, point) (point.x >= rect.origin.x && point.x <= rect.size.width && point.y >= rect.origin.y && point.y <= rect.size.height)
 
+static char kPNCPinnacleGestureRecognizerKey;
 static NSDictionary *preferences = nil;
 
 static void reloadPreferences()
@@ -31,8 +31,13 @@ static void reloadPreferences()
 
 	if (self) {
 		UILongPressGestureRecognizer *longPressRecognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(pinnacleHandleHold:)];
-		[longPressRecognizer setCancelsTouchesInView:NO];
+		[longPressRecognizer setDelegate:(id<UILongPressGestureRecognizerDelegate>)self];
+
 		[self addGestureRecognizer:longPressRecognizer];
+
+		objc_setAssociatedObject(self, &kPNCPinnacleGestureRecognizerKey, longPressRecognizer, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+
+		[longPressRecognizer release];
 	}
 
 	return self;
@@ -42,16 +47,11 @@ static void reloadPreferences()
 - (void)pinnacleHandleHold:(UIGestureRecognizer *)gestureRecognizer
 {
 	id backButton = [self currentBackButton];
-	CGPoint touchLocation = [gestureRecognizer locationInView:self];
-
-	// The back button appears to have a minimum touchable area of 95pt * navbar height. 
-	CGRect validTouchArea = CGRectMake(0, 0, MAX(100, CGRectGetWidth([backButton bounds])), CGRectGetHeight([self bounds]));
-
-	BOOL enabled = ([preferences objectForKey:@"enabled"] ? [[preferences objectForKey:@"enabled"] boolValue] : YES);
-	BOOL shouldShowMenu = ([preferences objectForKey:@"showmenu"] ? [[preferences objectForKey:@"showmenu"] boolValue] : NO);
-
-	if (enabled && [gestureRecognizer state] == UIGestureRecognizerStateBegan && PNCRectContainsPoint(validTouchArea, touchLocation)) {
+	
+	if ([gestureRecognizer state] == UIGestureRecognizerStateBegan) {
 		if ([[self delegate] respondsToSelector:@selector(pinnaclePopToViewControllerAtIndex:)]) {
+			BOOL shouldShowMenu = ([preferences objectForKey:@"showmenu"] ? [[preferences objectForKey:@"showmenu"] boolValue] : NO);
+
 			if (shouldShowMenu) {
 				PNCNavigationItemPicker *itemPicker = [[PNCNavigationItemPicker alloc] init];
 				[itemPicker setDelegate:self];
@@ -73,6 +73,24 @@ static void reloadPreferences()
 				[[self delegate] pinnaclePopToViewControllerAtIndex:0];
 			}
 		}
+	}
+}
+
+- (BOOL)_gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer
+{
+	if (gestureRecognizer == objc_getAssociatedObject(self, &kPNCPinnacleGestureRecognizerKey)) {
+		BOOL enabled = ([preferences objectForKey:@"enabled"] ? [[preferences objectForKey:@"enabled"] boolValue] : YES);
+
+		id backButton = [self currentBackButton];
+		CGPoint touchLocation = [gestureRecognizer locationInView:self];
+
+		// The back button appears to have a minimum touchable area of 100pt * navbar height. 
+		CGRect validTouchArea = CGRectMake(0, 0, MAX(100, CGRectGetWidth([backButton bounds])), CGRectGetHeight([self bounds]));
+		BOOL isValidTouch = PNCRectContainsPoint(validTouchArea, touchLocation);
+		
+		return (enabled && backButton && isValidTouch);
+	} else {
+		return %orig;
 	}
 }
 
@@ -102,7 +120,6 @@ static void reloadPreferences()
 }
 
 %end
-
 
 %ctor
 {
