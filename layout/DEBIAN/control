@@ -1,9 +1,9 @@
 Package: com.protosphere.pinnacle
 Name: Pinnacle
 Depends: mobilesubstrate
-Version: 1.0.0
+Version: 1.0.1
 Architecture: iphoneos-arm
-Description: An awesome MobileSubstrate tweak!
+Description: reveal navigation menu holding back button
 Maintainer: Josh Kugelmann
 Author: Josh Kugelmann
 Section: Tweaks
