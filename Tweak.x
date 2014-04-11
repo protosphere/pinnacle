@@ -10,6 +10,12 @@
 - (id)navigationItems;
 @end
 
+@protocol UILongPressGestureRecognizerDelegate <NSObject, UIGestureRecognizerDelegate>
+@optional
+- (BOOL)longPressGestureCanTransitionToRecognizedState:(id)recognizedState;
+@end
+
+
 #define PNCRectContainsPoint(rect, point) (point.x >= rect.origin.x && point.x <= rect.size.width && point.y >= rect.origin.y && point.y <= rect.size.height)
 
 static char kPNCPinnacleGestureRecognizerKey;
@@ -47,7 +53,7 @@ static void reloadPreferences()
 - (void)pinnacleHandleHold:(UIGestureRecognizer *)gestureRecognizer
 {
 	id backButton = [self currentBackButton];
-	
+
 	if ([gestureRecognizer state] == UIGestureRecognizerStateBegan) {
 		if ([[self delegate] respondsToSelector:@selector(pinnaclePopToViewControllerAtIndex:)]) {
 			BOOL shouldShowMenu = ([preferences objectForKey:@"showmenu"] ? [[preferences objectForKey:@"showmenu"] boolValue] : NO);
@@ -84,10 +90,10 @@ static void reloadPreferences()
 		id backButton = [self currentBackButton];
 		CGPoint touchLocation = [gestureRecognizer locationInView:self];
 
-		// The back button appears to have a minimum touchable area of 100pt * navbar height. 
+		// The back button appears to have a minimum touchable area of 100pt * navbar height.
 		CGRect validTouchArea = CGRectMake(0, 0, MAX(100, CGRectGetWidth([backButton bounds])), CGRectGetHeight([self bounds]));
 		BOOL isValidTouch = PNCRectContainsPoint(validTouchArea, touchLocation);
-		
+
 		return (enabled && backButton && isValidTouch);
 	} else {
 		return %orig;
